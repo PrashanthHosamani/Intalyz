@@ -1,0 +1,344 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Intalyz.io — Intelligence Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{% static 'osint_app/css/main.css' %}"/>
+</head>
+<body>
+
+  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+  <div class="orb orb-1" aria-hidden="true"></div>
+  <div class="orb orb-2" aria-hidden="true"></div>
+  <div class="orb orb-3" aria-hidden="true"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="11" cy="11" r="3" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <span class="brand-name">Intalyz<span class="brand-dot">.</span>io</span>
+      </div>
+      <div class="nav-links">
+        <a href="#how-it-works" class="nav-link">How it works</a>
+        <a href="#data-sources" class="nav-link">Data Sources</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'accounts:profile' %}" class="nav-link" title="Profile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:-2px;">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </a>
+          <a href="{% url 'accounts:logout' %}" class="nav-link">Sign Out</a>
+          <a href="#investigate" class="nav-link nav-cta">Start Investigation</a>
+        {% else %}
+          <a href="{% url 'accounts:signin' %}" class="nav-link">Sign In</a>
+          <a href="{% url 'accounts:signin' %}?next=#investigate" class="nav-link nav-cta">Start Investigation</a>
+        {% endif %}
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#how-it-works" class="mobile-link">How it works</a>
+    <a href="#data-sources" class="mobile-link">Data Sources</a>
+    {% if user.is_authenticated %}
+      <a href="#investigate" class="mobile-link">Start Investigation</a>
+      <a href="{% url 'accounts:logout' %}" class="mobile-link">Sign Out</a>
+    {% else %}
+      <a href="{% url 'accounts:signin' %}" class="mobile-link">Sign In</a>
+      <a href="{% url 'accounts:signup' %}" class="mobile-link">Sign Up</a>
+      <a href="{% url 'accounts:signin' %}?next=#investigate" class="mobile-link">Start Investigation</a>
+    {% endif %}
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="hero-left">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Automated Intelligence Gathering
+      </div>
+      <h1 class="hero-title">
+        Uncover the<br/>
+        <span class="gradient-text">Digital Truth</span><br/>
+        Behind Any Entity
+      </h1>
+      <p class="hero-sub">Enter a company or individual. Our platform aggregates intelligence across social networks, domain infrastructure, breach databases, and corporate registries — delivered as a professional PDF report.</p>
+      <div class="hero-btns">
+        {% if user.is_authenticated %}
+          <a href="#investigate" class="btn-primary">Start Investigation <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        {% else %}
+          <a href="{% url 'accounts:signin' %}" class="btn-primary">Start Investigation <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        {% endif %}
+        <a href="#how-it-works" class="btn-ghost">See how it works</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat"><div class="hstat-n">4</div><div class="hstat-l">Data Sources</div></div>
+        <div class="hstat-sep"></div>
+        <div class="hstat"><div class="hstat-n">3</div><div class="hstat-l">Analysis Phases</div></div>
+        <div class="hstat-sep"></div>
+        <div class="hstat"><div class="hstat-n">PDF</div><div class="hstat-l">Report Format</div></div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="terminal">
+        <div class="term-bar">
+          <div class="tdot td-r"></div><div class="tdot td-y"></div><div class="tdot td-g"></div>
+          <span class="term-title">osint — terminal</span>
+        </div>
+        <div class="term-body">
+          <p class="tl"><span class="tc-prompt">$</span> <span class="tc-cmd">osint investigate</span> <span class="tc-arg">"AIGeeks"</span></p>
+          <p class="tl tl-d1"><span class="tc-dim">◆ Phase I — Acquiring data...</span></p>
+          <p class="tl tl-d2"><span class="tc-ok">✓</span> Google Dorking <span class="tc-num">→ 12 results</span></p>
+          <p class="tl tl-d3"><span class="tc-ok">✓</span> WHOIS + DNS <span class="tc-num">→ 5 records</span></p>
+          <p class="tl tl-d4"><span class="tc-ok">✓</span> GitHub repos <span class="tc-num">→ 3 found</span></p>
+          <p class="tl tl-d5"><span class="tc-warn">!</span> HIBP breach <span class="tc-num">→ 1 found</span></p>
+          <p class="tl tl-d6"><span class="tc-dim">◆ Phase II — Analysis...</span></p>
+          <p class="tl tl-d7"><span class="tc-ok">✓</span> Confirmed findings <span class="tc-num">→ 17</span></p>
+          <p class="tl tl-d8"><span class="tc-ok">✓</span> Risk score <span class="tc-risk">47/100 — MEDIUM</span></p>
+          <p class="tl tl-d9"><span class="tc-dim">◆ Phase III — Generating PDF...</span></p>
+          <p class="tl tl-d10"><span class="tc-ok">✓</span> Report saved <span class="tc-blink">▌</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="sec" id="how-it-works">
+    <div class="con">
+      <div class="sec-label">// HOW IT WORKS</div>
+      <h2 class="sec-title">Three Phases.<br/>One Report.</h2>
+      <div class="phases">
+        <div class="phase-card">
+          <div class="ph-num">01</div>
+          <div class="ph-icon ph-blue"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21" stroke-linecap="round"/></svg></div>
+          <h3 class="ph-title">Data Acquisition</h3>
+          <p class="ph-desc">Multi-vector adapter pattern queries Google, WHOIS, DNS, GitHub, HIBP, OpenCorporates, and NewsAPI simultaneously across all source categories.</p>
+          <div class="ph-tags"><span class="tag">Social</span><span class="tag">Infrastructure</span><span class="tag">Regulatory</span></div>
+        </div>
+        <div class="phase-card phase-card--mid">
+          <div class="ph-num">02</div>
+          <div class="ph-icon ph-purple"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg></div>
+          <h3 class="ph-title">Entity Resolution</h3>
+          <p class="ph-desc">Fuzzy matching with confidence scoring links findings to your target. False positives filtered automatically. Alias expansion improves coverage across related domains.</p>
+          <div class="ph-tags"><span class="tag">Fuzzy Match</span><span class="tag">Confidence Scores</span><span class="tag">Risk Score</span></div>
+        </div>
+        <div class="phase-card">
+          <div class="ph-num">03</div>
+          <div class="ph-icon ph-green"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 1 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <h3 class="ph-title">PDF Report</h3>
+          <p class="ph-desc">Professional report with executive summary, risk breakdown, categorised findings tables, and a full audit trail — every data point timestamped with its source URL.</p>
+          <div class="ph-tags"><span class="tag">Audit Trail</span><span class="tag">Risk Bands</span><span class="tag">PDF Export</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA SOURCES -->
+  <section class="sec sec-alt" id="data-sources">
+    <div class="con">
+      <div class="sec-label">// DATA SOURCES</div>
+      <h2 class="sec-title">What We Scan</h2>
+      <div class="src-grid">
+        <div class="src-card"><div class="src-ico src-blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21" stroke-linecap="round"/></svg></div><div><div class="src-name">Google Dorking</div><div class="src-cat">Social &amp; Public Footprint</div><div class="src-desc">Advanced search queries surfacing public mentions, leaked documents, and indexed profiles.</div></div></div>
+        <div class="src-card"><div class="src-ico src-purple"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg></div><div><div class="src-name">WHOIS + DNS</div><div class="src-cat">Technical Infrastructure</div><div class="src-desc">Domain registration, name servers, MX records, TXT entries, and full DNS enumeration.</div></div></div>
+        <div class="src-card"><div class="src-ico src-orange"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></div><div><div class="src-name">GitHub</div><div class="src-cat">Technical Infrastructure</div><div class="src-desc">Organisation discovery, repository analysis, leaked credential detection in commit history.</div></div></div>
+        <div class="src-card"><div class="src-ico src-red"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><div class="src-name">HIBP Breach Check</div><div class="src-cat">Contextual &amp; Regulatory</div><div class="src-desc">Have I Been Pwned integration for domain-level breach detection and exposed credentials.</div></div></div>
+        <div class="src-card"><div class="src-ico src-green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div><div><div class="src-name">OpenCorporates</div><div class="src-cat">Contextual &amp; Regulatory</div><div class="src-desc">Global corporate registry — incorporation, jurisdiction, address, and dissolution status.</div></div></div>
+        <div class="src-card"><div class="src-ico src-cyan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"/><path d="M18 14h-8M15 18h-5M10 6H5a2 2 0 0 0-2 2v3"/></svg></div><div><div class="src-name">News Archives</div><div class="src-cat">Contextual &amp; Regulatory</div><div class="src-desc">Live NewsAPI querying for recent mentions, negative coverage, lawsuits, and scandal detection.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INVESTIGATION FORM -->
+  <section class="sec" id="investigate">
+    <div class="con con-narrow">
+      <div class="sec-label">// START INVESTIGATION</div>
+      <h2 class="sec-title">Run Your<br/>Investigation</h2>
+
+      <!-- FORM -->
+      <div class="panel" id="formPanel">
+        <div class="panel-body">
+          <div class="field">
+            <div class="field-label">Target Type</div>
+            <div class="type-toggle">
+              <button class="type-btn active" data-type="company" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                Company / Organisation
+              </button>
+              <button class="type-btn" data-type="individual" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Individual / Person
+              </button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="entityName">Target Name <span class="req">*</span></label>
+            <div class="iw">
+              <svg class="i-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21" stroke-linecap="round"/></svg>
+              <input type="text" id="entityName" class="inp" placeholder="e.g. AIGeeks or Travis Haasch" autocomplete="off" spellcheck="false"/>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="aliases">Aliases &amp; Related Entities <span class="opt">optional</span></label>
+            <div class="iw">
+              <svg class="i-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <input type="text" id="aliases" class="inp" placeholder="e.g. aigeeks.com, AI Geeks Inc" autocomplete="off"/>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Data Sources</div>
+            <div class="chk-grid">
+              <label class="chk-item" for="ck1">
+                <input type="checkbox" id="ck1" value="google_dork" checked/>
+                <div class="chk-vis"><div class="chk-ico src-blue"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21" stroke-linecap="round"/></svg></div><div><div class="chk-name">Google Dorking</div><div class="chk-cat">Social</div></div></div>
+                <div class="chk-box"></div>
+              </label>
+              <label class="chk-item" for="ck2">
+                <input type="checkbox" id="ck2" value="whois_dns" checked/>
+                <div class="chk-vis"><div class="chk-ico src-purple"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg></div><div><div class="chk-name">WHOIS + DNS</div><div class="chk-cat">Infrastructure</div></div></div>
+                <div class="chk-box"></div>
+              </label>
+              <label class="chk-item" for="ck3">
+                <input type="checkbox" id="ck3" value="github" checked/>
+                <div class="chk-vis"><div class="chk-ico src-orange"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></div><div><div class="chk-name">GitHub</div><div class="chk-cat">Infrastructure</div></div></div>
+                <div class="chk-box"></div>
+              </label>
+              <label class="chk-item" for="ck4">
+                <input type="checkbox" id="ck4" value="contextual" checked/>
+                <div class="chk-vis"><div class="chk-ico src-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><div class="chk-name">Breach + News</div><div class="chk-cat">Regulatory</div></div></div>
+                <div class="chk-box"></div>
+              </label>
+              <label class="chk-item" for="ck5">
+                <input type="checkbox" id="ck5" value="company_intel" checked/>
+                <div class="chk-vis"><div class="chk-ico src-green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/><path d="M9 10h1"/><path d="M14 10h1"/></svg></div><div><div class="chk-name">Company Intel</div><div class="chk-cat">Due Diligence</div></div></div>
+                <div class="chk-box"></div>
+              </label>
+            </div>
+          </div>
+
+          <button class="btn-submit" id="submitBtn" type="button">
+            <span>Initiate Investigation</span>
+            <div class="btn-arr"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- PROGRESS -->
+      <div class="panel panel-prog" id="progressPanel" style="display:none">
+        <div class="panel-body">
+          <div class="prog-head">
+            <div class="prog-spin"></div>
+            <div><div class="prog-ttl">Investigating <strong id="progName"></strong></div><div class="prog-sub-txt">This typically takes 30–90 seconds</div></div>
+          </div>
+          <div class="pp-list">
+            <div class="pp" id="pp1">
+              <div class="pp-l"><div class="pp-circ"><div class="pp-inn"></div></div><div class="pp-line"></div></div>
+              <div class="pp-r"><div class="pp-nm">Phase I — Data Acquisition</div><div class="pp-ds">Google Dorking · WHOIS · DNS · GitHub · HIBP · News · OpenCorporates</div><span class="pp-badge" id="pb1">Waiting</span></div>
+            </div>
+            <div class="pp" id="pp2">
+              <div class="pp-l"><div class="pp-circ"><div class="pp-inn"></div></div><div class="pp-line"></div></div>
+              <div class="pp-r"><div class="pp-nm">Phase II — Analysis &amp; Entity Resolution</div><div class="pp-ds">Fuzzy matching · Confidence scoring · False positive filtering · Risk scoring</div><span class="pp-badge" id="pb2">Waiting</span></div>
+            </div>
+            <div class="pp" id="pp3">
+              <div class="pp-l"><div class="pp-circ"><div class="pp-inn"></div></div></div>
+              <div class="pp-r"><div class="pp-nm">Phase III — PDF Report Generation</div><div class="pp-ds">Executive summary · Risk breakdown · Data tables · Full audit trail</div><span class="pp-badge" id="pb3">Waiting</span></div>
+            </div>
+          </div>
+          <div class="prog-foot">
+            <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+            <span class="prog-pct" id="progPct">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULT -->
+      <div class="panel panel-result" id="resultPanel" style="display:none">
+        <div class="panel-body">
+          <div class="res-check"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="res-ttl">Investigation Complete</div>
+          <div class="res-entity" id="resEntity"></div>
+          <div class="res-metrics">
+            <div class="met"><div class="met-v" id="mScore">—</div><div class="met-l">Risk Score</div></div>
+            <div class="met-div"></div>
+            <div class="met"><div class="met-v met-sev" id="mSev">—</div><div class="met-l">Severity</div></div>
+            <div class="met-div"></div>
+            <div class="met"><div class="met-v" id="mFind">—</div><div class="met-l">Findings</div></div>
+          </div>
+          <div class="res-actions">
+            <a class="btn-dl" id="downloadBtn" href="#" download>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Intelligence Report (PDF)
+            </a>
+            <button class="btn-new" id="newBtn" type="button">New Investigation</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ERROR -->
+      <div class="panel panel-err" id="errorPanel" style="display:none">
+        <div class="panel-body">
+          <div class="err-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div class="err-ttl">Investigation Failed</div>
+          <div class="err-msg" id="errMsg"></div>
+          <div class="err-hint">Check your API keys in <code>config/.env</code></div>
+          <button class="btn-new" id="retryBtn" type="button">Try Again</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECENT JOBS -->
+  {% if recent_jobs %}
+  <section class="sec sec-alt" id="recent">
+    <div class="con">
+      <div class="sec-label">// RECENT INVESTIGATIONS</div>
+      <h2 class="sec-title">History</h2>
+      <div class="jobs-tbl">
+        <div class="jobs-hd"><span>Entity</span><span>Type</span><span>Risk</span><span>Status</span><span>Report</span></div>
+        {% for job in recent_jobs %}
+        <div class="jobs-row">
+          <span class="j-ent">{{ job.entity_name }}</span>
+          <span class="j-type">{{ job.entity_type }}</span>
+          <span class="j-risk">{% if job.risk_score %}<span class="risk-pill risk-{{ job.severity|lower }}">{{ job.risk_score }}/100 — {{ job.severity }}</span>{% else %}—{% endif %}</span>
+          <span class="j-stat st-{{ job.status }}">{% if job.status == 'running' %}<span class="st-pulse"></span>{% endif %}{{ job.status|upper }}</span>
+          <span class="j-dl">{% if job.status == 'completed' %}<a href="/download/{{ job.id }}/" class="dl-link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> PDF</a>{% else %}—{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <footer class="footer">
+    <div class="con">
+      <div class="foot-in">
+        <div class="nav-brand"><div class="brand-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="11" cy="11" r="3" stroke="currentColor" stroke-width="1.5"/></svg></div><span class="brand-name">Intalyz<span class="brand-dot">.</span>io</span></div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    window.USER_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
+    window.SIGNIN_URL = "{% url 'accounts:signin' %}";
+  </script>
+  <script src="{% static 'osint_app/js/main.js' %}"></script>
+</body>
+</html>

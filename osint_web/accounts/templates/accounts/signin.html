@@ -1,0 +1,463 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In — Intalyz.io Intelligence Platform</title>
+  <meta name="description" content="Sign in to Intalyz.io to run intelligence investigations."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #050810;
+      --blue:    #4f9cf9;
+      --purple:  #a78bfa;
+      --cyan:    #6ee7f7;
+      --red:     #f87171;
+      --green:   #4ade80;
+      --txt:     #e2e8f0;
+      --txt2:    #94a3b8;
+      --txt3:    #475569;
+      --border:  rgba(255,255,255,0.08);
+      --border-h:rgba(255,255,255,0.16);
+      --glass:   rgba(255,255,255,0.04);
+      --grad:    linear-gradient(135deg, #4f9cf9 0%, #a78bfa 50%, #6ee7f7 100%);
+      --grad-text:linear-gradient(135deg, #7eb8ff 0%, #c4b5fd 50%, #67e8f9 100%);
+      --sans:    'Outfit', sans-serif;
+      --mono:    'JetBrains Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: var(--bg);
+      color: var(--txt);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: var(--sans); cursor: pointer; border: none; background: none; }
+
+    /* ── Background ── */
+    #bgCanvas {
+      position: fixed; inset: 0; z-index: 0;
+      opacity: 0.35; pointer-events: none;
+    }
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(80px); pointer-events: none; z-index: 0;
+      animation: float 8s ease-in-out infinite;
+    }
+    .orb-1 { width:500px;height:500px;background:rgba(79,156,249,0.12);top:-200px;right:-100px;animation-delay:0s; }
+    .orb-2 { width:400px;height:400px;background:rgba(167,139,250,0.10);bottom:20%;left:-150px;animation-delay:-3s; }
+    .orb-3 { width:300px;height:300px;background:rgba(110,231,247,0.08);bottom:-100px;right:20%;animation-delay:-5s; }
+    @keyframes float {
+      0%,100% { transform:translateY(0) scale(1); }
+      50%      { transform:translateY(-30px) scale(1.05); }
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      position: fixed; top:0; left:0; right:0; z-index:100;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,8,16,0.7);
+    }
+    .nav-inner {
+      max-width:1200px; margin:0 auto; padding:0 2rem;
+      height:68px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .nav-brand { display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.15rem; letter-spacing:-0.02em; }
+    .brand-icon {
+      width:36px;height:36px; background:var(--grad);
+      border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0;
+    }
+    .brand-name { color:#fff; }
+    .brand-dot  { color:var(--blue); }
+    .nav-links  { display:flex; align-items:center; gap:1.5rem; }
+    .nav-link   { font-size:0.88rem; font-weight:500; color:var(--txt2); transition:color 0.2s; }
+    .nav-link:hover { color:#fff; }
+    .nav-btn {
+      padding:0.45rem 1.1rem;
+      border:1px solid var(--border-h);
+      border-radius:8px; color:var(--txt) !important;
+      font-weight:600; font-size:0.85rem;
+      transition:all 0.2s;
+    }
+    .nav-btn:hover { background:rgba(79,156,249,0.12); border-color:rgba(79,156,249,0.4); color:#fff !important; }
+    .nav-btn-fill {
+      padding:0.45rem 1.1rem;
+      background:var(--blue); border-radius:8px;
+      color:#fff !important; font-weight:600; font-size:0.85rem;
+      transition:all 0.2s;
+    }
+    .nav-btn-fill:hover { background:#6aaeff; }
+
+    /* ── Main layout ── */
+    .auth-page {
+      position:relative; z-index:5;
+      flex:1; display:flex; align-items:center; justify-content:center;
+      padding: 100px 1.5rem 3rem;
+    }
+    .auth-wrap { width:100%; max-width:440px; }
+
+    /* ── Auth Card ── */
+    .auth-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 24px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      padding: 2.5rem;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+      animation: card-in 0.45s ease;
+    }
+    @keyframes card-in {
+      from { opacity:0; transform:translateY(20px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .auth-header { text-align:center; margin-bottom:2rem; }
+    .auth-icon {
+      width:56px;height:56px; background:var(--grad);
+      border-radius:16px; display:flex; align-items:center; justify-content:center;
+      margin:0 auto 1.25rem; color:#fff;
+      box-shadow:0 8px 32px rgba(79,156,249,0.35);
+    }
+    .auth-title {
+      font-size:1.65rem; font-weight:800; color:#fff;
+      letter-spacing:-0.03em; margin-bottom:0.4rem;
+    }
+    .auth-sub { font-size:0.88rem; color:var(--txt2); line-height:1.6; }
+    .auth-sub a { color:var(--blue); font-weight:500; }
+    .auth-sub a:hover { text-decoration:underline; }
+
+    /* ── Alerts ── */
+    .alert-list { display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.25rem; }
+    .alert {
+      display:flex; align-items:flex-start; gap:0.6rem;
+      padding:0.75rem 1rem; border-radius:10px;
+      font-size:0.84rem; line-height:1.5;
+    }
+    .alert-error {
+      background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.3); color:#fca5a5;
+    }
+    .alert-success {
+      background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); color:#86efac;
+    }
+    .alert-icon { flex-shrink:0; margin-top:1px; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom:1.25rem; }
+    .form-label {
+      display:block; font-size:0.82rem; font-weight:600;
+      color:var(--txt2); margin-bottom:0.5rem; letter-spacing:0.01em;
+    }
+    .input-wrap {
+      display:flex; align-items:center;
+      background:rgba(0,0,0,0.35); border:1px solid var(--border);
+      border-radius:10px; transition:border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-wrap:focus-within {
+      border-color:rgba(79,156,249,0.5);
+      box-shadow:0 0 0 3px rgba(79,156,249,0.09);
+    }
+    .input-wrap.has-error { border-color:rgba(248,113,113,0.5); }
+    .input-wrap.has-error:focus-within { box-shadow:0 0 0 3px rgba(248,113,113,0.09); }
+    .input-ico { padding:0 0.75rem; color:var(--txt3); flex-shrink:0; }
+    .form-input {
+      flex:1; background:transparent; border:none; outline:none;
+      color:var(--txt); font-family:var(--sans); font-size:0.92rem;
+      font-weight:500; padding:0.85rem 0.75rem 0.85rem 0;
+      caret-color:var(--blue);
+    }
+    .form-input::placeholder { color:var(--txt3); font-weight:400; }
+    .field-error {
+      margin-top:0.4rem; font-size:0.78rem; color:#fca5a5;
+      display:flex; align-items:center; gap:0.35rem;
+    }
+
+    .remember-row {
+      display:flex; align-items:center; gap:0.6rem;
+      margin-bottom:1.5rem; cursor:pointer;
+    }
+    .remember-row input[type="checkbox"] { display:none; }
+    .chk-box-custom {
+      width:18px; height:18px; border:1.5px solid var(--border-h);
+      border-radius:5px; flex-shrink:0; position:relative; transition:all 0.2s;
+    }
+    .remember-row input:checked ~ .chk-box-custom {
+      background:var(--blue); border-color:var(--blue);
+    }
+    .remember-row input:checked ~ .chk-box-custom::after {
+      content:''; position:absolute;
+      top:2px; left:5px; width:5px; height:9px;
+      border:2px solid #fff; border-top:none; border-left:none;
+      transform:rotate(45deg);
+    }
+    .remember-label { font-size:0.84rem; color:var(--txt2); cursor:pointer; user-select:none; }
+
+    /* ── Buttons ── */
+    .btn-auth {
+      width:100%; padding:0.9rem;
+      background:var(--blue); border-radius:10px;
+      color:#fff; font-family:var(--sans); font-size:0.95rem;
+      font-weight:700; letter-spacing:0.01em;
+      transition:all 0.25s; cursor:pointer; border:none;
+      box-shadow:0 4px 24px rgba(79,156,249,0.3);
+      display:flex; align-items:center; justify-content:center; gap:0.6rem;
+    }
+    .btn-auth:hover { background:#6aaeff; transform:translateY(-2px); box-shadow:0 8px 36px rgba(79,156,249,0.45); }
+    .btn-auth:active { transform:translateY(0); }
+
+    /* ── Divider ── */
+    .divider {
+      display:flex; align-items:center; gap:1rem; margin:1.5rem 0;
+    }
+    .divider-line { flex:1; height:1px; background:var(--border); }
+    .divider-txt { font-size:0.75rem; color:var(--txt3); font-weight:500; letter-spacing:0.05em; }
+
+    /* ── Google button ── */
+    .btn-google {
+      width:100%; padding:0.85rem;
+      background:rgba(255,255,255,0.05); border:1px solid var(--border-h);
+      border-radius:10px; color:var(--txt); font-family:var(--sans);
+      font-size:0.92rem; font-weight:600;
+      display:flex; align-items:center; justify-content:center; gap:0.65rem;
+      transition:all 0.2s; cursor:pointer; text-decoration:none;
+    }
+    .btn-google:hover { background:rgba(255,255,255,0.09); border-color:rgba(255,255,255,0.22); color:#fff; transform:translateY(-1px); }
+
+    /* ── Footer links ── */
+    .auth-footer {
+      display:flex; align-items:center; justify-content:center;
+      gap:1.5rem; margin-top:1.5rem;
+    }
+    .auth-footer a { font-size:0.83rem; color:var(--txt3); transition:color 0.2s; }
+    .auth-footer a:hover { color:var(--txt); }
+    .auth-footer .sep { width:3px;height:3px;border-radius:50%;background:var(--txt3); }
+
+    .switch-link {
+      text-align:center; margin-top:1.75rem;
+      font-size:0.88rem; color:var(--txt2);
+    }
+    .switch-link a { color:var(--blue); font-weight:600; }
+    .switch-link a:hover { text-decoration:underline; }
+
+    @media (max-width:480px) {
+      .auth-card { padding:1.75rem; }
+      .nav-links .nav-btn { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+  <div class="orb orb-1" aria-hidden="true"></div>
+  <div class="orb orb-2" aria-hidden="true"></div>
+  <div class="orb orb-3" aria-hidden="true"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="11" cy="11" r="3" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <span class="brand-name">Intalyz<span class="brand-dot">.</span>io</span>      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="{% url 'accounts:signup' %}" class="nav-link nav-btn">Create Account</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- SIGN IN FORM -->
+  <main class="auth-page">
+    <div class="auth-wrap">
+      <div class="auth-card">
+
+        <div class="auth-header">
+          <div class="auth-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21" stroke-linecap="round"/>
+              <circle cx="11" cy="11" r="3"/>
+            </svg>
+          </div>
+          <h1 class="auth-title">Welcome back</h1>
+          <p class="auth-sub">Sign in to your Intalyz.io account</p>
+        </div>
+
+        <!-- Messages / Errors -->
+        {% if messages %}
+        <div class="alert-list">
+          {% for message in messages %}
+          <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+            <span class="alert-icon">
+              {% if message.tags == 'error' %}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {% else %}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              {% endif %}
+            </span>
+            {{ message }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Non-field errors -->
+        {% if form.non_field_errors %}
+        <div class="alert-list">
+          {% for error in form.non_field_errors %}
+          <div class="alert alert-error">
+            <span class="alert-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+            {{ error }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <!-- Username or Email -->
+          <div class="form-group">
+            <label class="form-label" for="{{ form.username_or_email.id_for_label }}">Email or Username</label>
+            <div class="input-wrap {% if form.username_or_email.errors %}has-error{% endif %}">
+              <span class="input-ico">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <input
+                type="text"
+                id="{{ form.username_or_email.id_for_label }}"
+                name="{{ form.username_or_email.html_name }}"
+                class="form-input"
+                placeholder="you@example.com"
+                value="{{ form.username_or_email.value|default:'' }}"
+                autocomplete="username"
+                autofocus
+              />
+            </div>
+            {% if form.username_or_email.errors %}
+              {% for error in form.username_or_email.errors %}
+              <div class="field-error">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {{ error }}
+              </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+            <div class="input-wrap {% if form.password.errors %}has-error{% endif %}">
+              <span class="input-ico">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input
+                type="password"
+                id="{{ form.password.id_for_label }}"
+                name="{{ form.password.html_name }}"
+                class="form-input"
+                placeholder="••••••••"
+                autocomplete="current-password"
+              />
+            </div>
+            {% if form.password.errors %}
+              {% for error in form.password.errors %}
+              <div class="field-error">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {{ error }}
+              </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+
+          <!-- Remember me -->
+          <label class="remember-row">
+            <input type="checkbox" name="{{ form.remember_me.html_name }}" id="{{ form.remember_me.id_for_label }}" {% if form.remember_me.value %}checked{% endif %}/>
+            <div class="chk-box-custom"></div>
+            <span class="remember-label">Remember me for 30 days</span>
+          </label>
+
+          <button type="submit" class="btn-auth" id="signinBtn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Sign In
+          </button>
+        </form>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span class="divider-txt">OR</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <!-- Google OAuth -->
+        <a href="{% url 'google_login' %}" class="btn-google" id="googleSignIn">
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Continue with Google
+        </a>
+
+        <div class="auth-footer">
+          <a href="#">Forgot Password?</a>
+          <div class="sep"></div>
+          <a href="/">Back to Home</a>
+        </div>
+
+        <div class="switch-link">
+          Don't have an account? <a href="{% url 'accounts:signup' %}">Create one free</a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /* Particle canvas */
+    (function() {
+      const canvas = document.getElementById('bgCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let W, H, particles = [];
+      function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+      class P {
+        constructor() { this.reset(); }
+        reset() { this.x=Math.random()*W; this.y=Math.random()*H; this.vx=(Math.random()-0.5)*0.3; this.vy=(Math.random()-0.5)*0.3; this.r=Math.random()*1.5+0.5; this.a=Math.random()*0.5+0.1; }
+        update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>W)this.vx*=-1; if(this.y<0||this.y>H)this.vy*=-1; }
+        draw() { ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.fillStyle=`rgba(79,156,249,${this.a})`; ctx.fill(); }
+      }
+      function init() { particles=Array.from({length:70},()=>new P()); }
+      function drawConn() {
+        for(let i=0;i<particles.length;i++) for(let j=i+1;j<particles.length;j++) {
+          const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+          if(d<120){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(79,156,249,${0.07*(1-d/120)})`;ctx.lineWidth=0.5;ctx.stroke();}
+        }
+      }
+      function loop(){ctx.clearRect(0,0,W,H);particles.forEach(p=>{p.update();p.draw();});drawConn();requestAnimationFrame(loop);}
+      resize(); init(); loop();
+      window.addEventListener('resize',resize);
+    })();
+
+    /* Navbar scroll */
+    window.addEventListener('scroll',()=>{
+      const n=document.querySelector('.navbar');
+      if(n) n.style.background=window.scrollY>10?'rgba(5,8,16,0.95)':'rgba(5,8,16,0.7)';
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - OSINT Platform{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>
+                <i class="fas fa-tachometer-alt"></i> Welcome, {{ user.get_full_name|default:user.username }}!
+            </h2>
+            <p class="text-muted">Your personal OSINT investigations dashboard</p>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Investigations</h6>
+                    <h3>{{ total_investigations }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Completed</h6>
+                    <h3>{{ recent_investigations|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">In Progress</h6>
+                    <h3>0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Failed</h6>
+                    <h3>0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Investigations -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i> Recent Investigations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_investigations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Entity Name</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Risk Score</th>
+                                        <th>Findings</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in recent_investigations %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ job.entity_name }}</strong>
+                                            </td>
+                                            <td>
+                                                <small class="badge bg-info">{{ job.get_entity_type_display }}</small>
+                                            </td>
+                                            <td>
+                                                {% if job.status == 'completed' %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% elif job.status == 'running' %}
+                                                    <span class="badge bg-warning">Running</span>
+                                                {% elif job.status == 'failed' %}
+                                                    <span class="badge bg-danger">Failed</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ job.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if job.risk_score %}
+                                                    {% if job.risk_score >= 80 %}
+                                                        <span class="badge bg-danger">{{ job.risk_score }}</span>
+                                                    {% elif job.risk_score >= 60 %}
+                                                        <span class="badge bg-warning">{{ job.risk_score }}</span>
+                                                    {% elif job.risk_score >= 40 %}
+                                                        <span class="badge" style="background-color: #FFC107; color: #333;">{{ job.risk_score }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success">{{ job.risk_score }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if job.findings_count %}
+                                                    <span class="badge bg-danger">{{ job.findings_count }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">0</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small>{{ job.created_at|date:"M d, H:i" }}</small>
+                                            </td>
+                                            <td>
+                                                {% if job.status == 'completed' and job.report_file %}
+                                                    <a href="{% url 'download_report' job.id %}" class="btn btn-sm btn-primary" title="Download Report">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                {% endif %}
+                                                <a href="{% url 'job_status' job.id %}" class="btn btn-sm btn-info" title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle"></i> No investigations yet. 
+                            <a href="{% url 'index' %}">Start your first investigation</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="d-grid gap-2 d-sm-flex">
+                <a href="{% url 'index' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search"></i> New Investigation
+                </a>
+                <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-user-edit"></i> Edit Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

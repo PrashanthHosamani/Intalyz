@@ -1,0 +1,33 @@
+# Core
+requests
+python-dotenv
+click
+tenacity
+
+# Scraping & OPSEC
+playwright
+fake-useragent
+urllib3
+
+# OSINT Libraries
+python-whois
+dnspython
+PyGithub
+googlesearch-python
+
+# Analysis
+rapidfuzz
+SQLAlchemy
+
+# Reporting
+reportlab
+Jinja2
+markdown
+
+# Data handling
+pandas
+
+# Web app (Django)
+django>=4.2,<5.0
+djangorestframework
+django-cors-headers
