@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, FileResponse, Http404
+from django.http import JsonResponse, FileResponse, Http404, HttpResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
@@ -107,20 +107,13 @@ def job_status(request, job_id):
 
 @login_required(login_url='accounts:signin')
 def download_report(request, job_id):
-    """Serve the generated PDF for download."""
+    """Redirect to the Cloudinary URL for the PDF."""
     job = get_object_or_404(InvestigationJob, id=job_id, user=request.user)
     if job.status != 'completed' or not job.report_file:
-        raise Http404("Report not ready.")
+        return HttpResponse("Report not ready.", status=404)
 
-    filepath = job.report_file.path
-    if not os.path.exists(filepath):
-        raise Http404("Report file not found.")
-
-    slug = job.entity_name.lower().replace(' ', '_')
-    filename = f"osint_report_{slug}.pdf"
-    response = FileResponse(open(filepath, 'rb'), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
+    # Instead of serving local file, redirect to Cloudinary URL
+    return HttpResponseRedirect(job.report_file.url)
 
 
 def privacy_policy(request):
