@@ -6,7 +6,7 @@ databases:
 
 services:
   - type: web
-    name: intalyz-osint
+    name: intalyz
     runtime: python
     plan: free
     buildCommand: "./build.sh"
