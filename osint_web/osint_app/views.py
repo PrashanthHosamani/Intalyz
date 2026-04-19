@@ -174,17 +174,18 @@ def _run_pipeline(job_id: str):
         reporter = PDFReporter()
         pdf_path = reporter.generate(job.entity_name, resolved, risk, raw)
 
-        # Save relative path to Django media
-        rel_path = os.path.relpath(pdf_path, settings.MEDIA_ROOT)
-
-        # Update job record
-        job.status         = 'completed'
-        job.risk_score     = risk['risk_score']
-        job.severity       = risk['severity']
-        job.findings_count = len(resolved['confirmed'])
-        job.report_file    = rel_path
-        job.completed_at   = tz.now()
-        job.save()
+        # Update job record and upload to Cloudinary
+        from django.core.files import File
+        with open(pdf_path, 'rb') as f:
+            job.status         = 'completed'
+            job.risk_score     = risk['risk_score']
+            job.severity       = risk['severity']
+            job.findings_count = len(resolved['confirmed'])
+            job.completed_at   = tz.now()
+            
+            # Saving to the FileField triggers the Cloudinary upload
+            slug = job.entity_name.lower().replace(' ', '_')
+            job.report_file.save(f"osint_report_{slug}.pdf", File(f), save=True)
 
     except Exception as exc:
         import traceback

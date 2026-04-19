@@ -40,3 +40,5 @@ whitenoise
 dj-database-url
 psycopg2-binary
 yfinance
+cloudinary
+django-cloudinary-storage
