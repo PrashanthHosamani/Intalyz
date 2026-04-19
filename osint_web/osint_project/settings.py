@@ -14,9 +14,10 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = 'django-osint-tool-secret-key-change-in-production'
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+# Allow all hosts in development, but read from env in production
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -93,6 +94,7 @@ SOCIALACCOUNT_LOGIN_ON_GET = True  # Skip the "You are about to sign in via Goog
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -123,11 +125,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'osint_project.wsgi.application'
 
+# dj_database_url handles production database connections via a simple URL (e.g. Postgres)
+import dj_database_url
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+    )
 }
 
 LANGUAGE_CODE = 'en-us'

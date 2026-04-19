@@ -1,0 +1,37 @@
+databases:
+  - name: osint_db
+    databaseName: intalyz
+    user: intalyz_user
+    plan: free
+
+services:
+  - type: web
+    name: intalyz-osint
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "cd osint_web && gunicorn osint_project.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: osint_db
+          property: connectionString
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "*"
+      - key: PYTHON_VERSION
+        value: "3.10.13"
+      # IMPORTANT: You must manually add these secrets in the Render dashboard
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: NEWS_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: OTX_API_KEY
+        sync: false

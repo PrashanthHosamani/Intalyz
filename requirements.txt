@@ -31,3 +31,10 @@ pandas
 django>=4.2,<5.0
 djangorestframework
 django-cors-headers
+
+# Deployment & Production
+gunicorn
+whitenoise
+dj-database-url
+psycopg2-binary
+yfinance
