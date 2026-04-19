@@ -1,5 +1,6 @@
 # Core
 requests
+requests-cache
 python-dotenv
 click
 tenacity
