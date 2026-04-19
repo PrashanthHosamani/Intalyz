@@ -7,4 +7,5 @@ urlpatterns = [
     path('investigate/',            views.submit_investigation, name='submit_investigation'),
     path('status/<uuid:job_id>/',   views.job_status,           name='job_status'),
     path('download/<uuid:job_id>/', views.download_report,      name='download_report'),
+    path('privacy-policy/',         views.privacy_policy,       name='privacy_policy'),
 ]

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Privacy Policy | Intalyz.io{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white shadow rounded-lg px-8 py-10 border border-gray-200">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+        <p class="text-sm text-gray-500 mb-8">Last Updated: April 2026</p>
+
+        <div class="prose prose-blue max-w-none text-gray-700 space-y-6">
+            
+            <section>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">1. Introduction</h2>
+                <p>Welcome to Intalyz.io ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, and share your data when you use our OSINT Due Diligence application and services.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">2. Information We Collect</h2>
+                <p>When you use Intalyz.io, we may collect the following types of information:</p>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                    <li><strong>Account Data:</strong> Email addresses and profile information when you register or sign in via third-party providers (e.g., Google OAuth).</li>
+                    <li><strong>Investigation Data:</strong> Entity names, domains, and parameters you input to generate OSINT reports.</li>
+                    <li><strong>Usage Data:</strong> Information about how you interact with our platform (IP addresses, browser types, timestamp logs).</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">3. How We Use Your Information</h2>
+                <p>We use the information we collect to:</p>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                    <li>Provide, operate, and maintain our OSINT intelligence services.</li>
+                    <li>Process your investigation requests and generate PDF reports.</li>
+                    <li>Authenticate your identity and secure your account.</li>
+                    <li>Comply with legal obligations and prevent abusive activities on our platform.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">4. Sharing Your Information</h2>
+                <p>We do not sell your personal data. We only share information with third parties in the following circumstances:</p>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                    <li><strong>Service Providers:</strong> We use third-party APIs (e.g., AlienVault OTX, GitHub API, Google Custom Search) to fulfill your OSINT requests. Your target entity queries are sent to these providers securely.</li>
+                    <li><strong>Hosting:</strong> Our infrastructure relies on secure third-party hosting (e.g., Render.com).</li>
+                    <li><strong>Legal Compliance:</strong> If required by law, subpoena, or other legal processes.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">5. Data Security</h2>
+                <p>We implement robust, industry-standard security measures to protect your personal information. However, no electronic transmission over the internet or information storage technology can be guaranteed to be 100% secure, so we cannot promise or guarantee that hackers, cybercriminals, or other unauthorized third parties will not be able to defeat our security.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">6. Google OAuth Compliance</h2>
+                <p>Intalyz.io uses Google's Application Programming Interface (API) Services to authenticate users. Our use and transfer to any other app of information received from Google APIs will adhere to <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" class="text-blue-600 hover:underline">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">7. Contact Us</h2>
+                <p>If you have any questions or comments about this Privacy Policy, you may contact us via our official support channels.</p>
+            </section>
+
+        </div>
+
+        <div class="mt-10 pt-6 border-t border-gray-200">
+            <a href="{% url 'index' %}" class="text-blue-600 hover:text-blue-800 font-medium">&larr; Back to Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

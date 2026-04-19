@@ -123,6 +123,11 @@ def download_report(request, job_id):
     return response
 
 
+def privacy_policy(request):
+    """Serve the Privacy Policy page."""
+    return render(request, 'osint_app/privacy_policy.html')
+
+
 # ── Background pipeline runner ────────────────────────────────────────────────
 
 def _run_pipeline(job_id: str):
