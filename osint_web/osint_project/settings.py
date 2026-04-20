@@ -26,8 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cloudinary_storage',
-    'cloudinary',
+    # 'cloudinary_storage',
+    # 'cloudinary',
     'django.contrib.sites',
     
     'corsheaders',
@@ -87,7 +87,7 @@ LOGIN_URL = 'accounts:signin'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'accounts:signin'
 
 # django-allauth settings (updated for latest version)
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
@@ -151,14 +151,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Cloudinary Storage Configuration
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
+# File Storage Configuration
+# Use local file storage for development
+# For production with Cloudinary, uncomment the block below and add valid credentials
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')
-}
+# Cloudinary Storage Configuration (disabled for development)
+# Uncomment below for production deployment
+# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
+# CLOUDINARY_STORAGE = {
+#     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+#     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+#     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')
+# }
 
 # ── OSINT Tool path (points to our existing osint_tool module) ────────────────
 OSINT_TOOL_PATH = str(BASE_DIR.parent / 'osint_tool')

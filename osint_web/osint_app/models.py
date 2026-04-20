@@ -26,6 +26,7 @@ class InvestigationJob(models.Model):
     aliases       = models.CharField(max_length=500, blank=True, help_text="Comma-separated aliases")
     adapters      = models.CharField(max_length=255, blank=True, default='google_dork,whois_dns,github,contextual', help_text="Comma-separated adapter names")
     status        = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    verification_status = models.CharField(max_length=20, choices=[('verified', 'Verified'), ('unverified', 'Unverified')], default='unverified', help_text="Whether entity passed pre-verification checks")
     risk_score    = models.IntegerField(null=True, blank=True)
     severity      = models.CharField(max_length=20, blank=True)
     findings_count= models.IntegerField(default=0)

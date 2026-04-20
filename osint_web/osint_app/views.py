@@ -3,6 +3,7 @@ import os
 import sys
 import threading
 import json
+import logging
 from datetime import datetime, timezone
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -15,6 +16,8 @@ from django.conf import settings
 from django.utils import timezone as tz
 
 from .models import InvestigationJob
+
+logger = logging.getLogger(__name__)
 
 # Add osint_tool to path
 sys.path.insert(0, settings.OSINT_TOOL_PATH)
@@ -107,13 +110,19 @@ def job_status(request, job_id):
 
 @login_required(login_url='accounts:signin')
 def download_report(request, job_id):
-    """Redirect to the Cloudinary URL for the PDF."""
+    """Serve the local PDF report file."""
     job = get_object_or_404(InvestigationJob, id=job_id, user=request.user)
     if job.status != 'completed' or not job.report_file:
-        return HttpResponse("Report not ready.", status=404)
+        return HttpResponse("Report not ready or missing.", status=404)
 
-    # Instead of serving local file, redirect to Cloudinary URL
-    return HttpResponseRedirect(job.report_file.url)
+    # Serve the file directly using FileResponse
+    try:
+        response = FileResponse(job.report_file.open('rb'), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="osint_report_{job.entity_name}.pdf"'
+        return response
+    except Exception as e:
+        logger.error(f"Error serving report: {e}")
+        return HttpResponse("Error retrieving report file.", status=500)
 
 
 def privacy_policy(request):
@@ -138,6 +147,8 @@ def _run_pipeline(job_id: str):
         # Import OSINT modules
         from core.orchestrator import Orchestrator
         from analysis.entity_resolver import EntityResolver
+        from analysis.entity_relationship_mapper import EntityRelationshipMapper
+        from analysis.entity_verification import EntityVerifier
         from analysis.risk_scorer import RiskScorer
         from reporting.pdf_reporter import PDFReporter
         from config import settings as osint_cfg
@@ -146,8 +157,50 @@ def _run_pipeline(job_id: str):
         os.makedirs(settings.OSINT_OUTPUT_DIR, exist_ok=True)
         osint_cfg.OUTPUT_DIR = settings.OSINT_OUTPUT_DIR
 
+        # Phase 0 — Entity Verification (NEW)
+        # Verify entity exists before running expensive adapters
+        logger.info("🔍 Starting entity verification for: %s (%s)", 
+                   job.entity_name, job.entity_type)
+        
+        verifier = EntityVerifier()
+        is_verified, verification_confidence, verification_details = verifier.verify(
+            job.entity_name, 
+            job.entity_type
+        )
+        
+        logger.info("✓ Entity verification complete: %s (confidence: %.0f%%)", 
+                   "PASS" if is_verified else "FAIL", verification_confidence)
+        
+        # If entity fails verification, skip low-value adapters
+        skip_adapters = set()
+        if not is_verified or verification_confidence < 40:
+            logger.warning("⚠ Entity verification failed - skipping speculative adapters")
+            skip_adapters = {
+                'contextual',  # Highly speculative
+                'company_intel',  # Often returns false positives
+                'company_discovery',  # Can't discover company if entity not verified
+            }
+
         # Get selected adapters from job record
         selected_adapters = [a.strip() for a in job.adapters.split(',') if a.strip()]
+        
+        # Always include intelligent adapters for better analysis if entity is verified
+        if selected_adapters and is_verified:
+            # Add the new intelligent adapters if not already present
+            intelligent_adapters = ['person_verification', 'website_verification']
+            
+            # For individual searches, always add company discovery
+            if job.entity_type == 'individual':
+                intelligent_adapters.append('company_discovery')
+            
+            for adapter in intelligent_adapters:
+                if adapter not in selected_adapters and adapter not in skip_adapters:
+                    selected_adapters.append(adapter)
+        
+        # Remove skipped adapters
+        selected_adapters = [a for a in selected_adapters if a not in skip_adapters]
+        
+        logger.info("Loading adapters: %s (skipped: %s)", selected_adapters, skip_adapters)
         
         # Load adapters
         adapters = _load_adapters(selected_adapters)
@@ -156,18 +209,28 @@ def _run_pipeline(job_id: str):
         orchestrator = Orchestrator(adapters)
         raw = orchestrator.run(job.entity_name, job.entity_type)
 
-        # Phase II — Analysis
+        # Phase II — Analysis & Entity Resolution
         alias_list = [a.strip() for a in job.aliases.split(',') if a.strip()]
         resolver = EntityResolver(job.entity_name, job.entity_type, aliases=alias_list)
         resolved = resolver.resolve(raw['results'])
+        
+        # Add verification info to resolved data
+        resolved['entity_verified'] = is_verified
+        resolved['verification_confidence'] = verification_confidence
+        resolved['verification_details'] = verification_details
 
+        # Phase II.5 — Build Entity Relationship Graph
+        relationship_mapper = EntityRelationshipMapper(job.entity_name, job.entity_type)
+        relationships = relationship_mapper.build_graph(resolved['confirmed'])
+
+        # Phase III — Risk Scoring
         risk = RiskScorer().score(resolved)
 
-        # Phase III — PDF Report
+        # Phase IV — PDF Report with Relationships
         reporter = PDFReporter()
-        pdf_path = reporter.generate(job.entity_name, resolved, risk, raw)
+        pdf_path = reporter.generate(job.entity_name, resolved, risk, raw, relationships)
 
-        # Update job record and upload to Cloudinary
+        # Update job record and save report
         from django.core.files import File
         with open(pdf_path, 'rb') as f:
             job.status         = 'completed'
@@ -175,10 +238,12 @@ def _run_pipeline(job_id: str):
             job.severity       = risk['severity']
             job.findings_count = len(resolved['confirmed'])
             job.completed_at   = tz.now()
+            job.verification_status = 'verified' if is_verified else 'unverified'
             
-            # Saving to the FileField triggers the Cloudinary upload
+            # Save the file locally
             slug = job.entity_name.lower().replace(' ', '_')
-            job.report_file.save(f"osint_report_{slug}.pdf", File(f), save=True)
+            filename = f"osint_report_{slug}_{job.id.hex[:8]}.pdf"
+            job.report_file.save(filename, File(f), save=True)
 
     except Exception as exc:
         import traceback
@@ -200,12 +265,18 @@ def _load_adapters(adapter_names=None):
     from adapters.github_adapter      import GitHubAdapter
     from adapters.contextual_adapter  import ContextualAdapter
     from adapters.company_intel_adapter import CompanyIntelAdapter
+    from adapters.person_verification_adapter import PersonVerificationAdapter
+    from adapters.website_verification_adapter import WebsiteVerificationAdapter
+    from adapters.company_discovery_adapter import CompanyDiscoveryAdapter
     
-    adapter_map['google_dork']   = GoogleDorkAdapter()
-    adapter_map['whois_dns']     = WhoisDnsAdapter()
-    adapter_map['github']        = GitHubAdapter()
-    adapter_map['contextual']    = ContextualAdapter()
-    adapter_map['company_intel'] = CompanyIntelAdapter()
+    adapter_map['google_dork']        = GoogleDorkAdapter()
+    adapter_map['whois_dns']          = WhoisDnsAdapter()
+    adapter_map['github']             = GitHubAdapter()
+    adapter_map['contextual']         = ContextualAdapter()
+    adapter_map['company_intel']      = CompanyIntelAdapter()
+    adapter_map['person_verification'] = PersonVerificationAdapter()
+    adapter_map['website_verification'] = WebsiteVerificationAdapter()
+    adapter_map['company_discovery'] = CompanyDiscoveryAdapter()
     
     if adapter_names:
         return [adapter_map[name] for name in adapter_names if name in adapter_map]
