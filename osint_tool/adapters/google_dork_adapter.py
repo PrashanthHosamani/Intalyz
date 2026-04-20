@@ -81,7 +81,9 @@ class GoogleDorkAdapter(BaseAdapter):
                 self._last_request_time = time.time()
                 self._request_count += 1
                 
-                urls: List[str] = list(gsearch(query, num_results=max_results, sleep_interval=1.5))
+                # Aggressive delay to completely avoid Google 429 rate limiting
+                # Google blocks requests when they detect automated queries
+                urls: List[str] = list(gsearch(query, num_results=max_results, sleep_interval=8.0))
                 
                 for url in urls:
                     # Check robots.txt before including

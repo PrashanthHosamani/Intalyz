@@ -15,7 +15,8 @@ from rapidfuzz import fuzz
 logger = logging.getLogger(__name__)
 
 # Confidence threshold — findings below this are flagged as potential false positives
-CONFIDENCE_THRESHOLD = 60  # out of 100
+# STRICT FILTERING: 70% threshold to eliminate keyword-based noise and include only verified information
+CONFIDENCE_THRESHOLD = 70
 
 
 class EntityResolver:

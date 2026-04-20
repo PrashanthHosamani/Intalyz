@@ -101,6 +101,13 @@ def main(
     resolver = EntityResolver(entity, entity_type)
     resolved = resolver.resolve(raw["results"])
 
+    # ── Build entity relationship graph ────────────────────────────────────────
+    click.echo(click.style("Phase II.5 — Mapping Entity Relationships…", fg="yellow"))
+    from analysis.entity_relationship_mapper import EntityRelationshipMapper
+    relationship_mapper = EntityRelationshipMapper(entity, entity_type)
+    relationships = relationship_mapper.build_graph(resolved["confirmed"])
+    click.echo(relationship_mapper.get_summary())
+
     # ── Risk scoring ──────────────────────────────────────────────────────────
     from analysis.risk_scorer import RiskScorer
     risk = RiskScorer().score(resolved)
@@ -117,7 +124,7 @@ def main(
     click.echo(click.style("Phase III — Generating PDF Report…", fg="yellow"))
     from reporting.pdf_reporter import PDFReporter
     reporter = PDFReporter()
-    pdf_path = reporter.generate(entity, resolved, risk, raw)
+    pdf_path = reporter.generate(entity, resolved, risk, raw, relationships)
 
     click.echo(click.style(f"\n✅ Report saved: {pdf_path}", fg="green", bold=True))
 
@@ -148,6 +155,9 @@ def _load_adapters(adapter_filter: str):
     from adapters.contextual_adapter  import ContextualAdapter
     from adapters.otx_adapter         import OtxAdapter
     from adapters.company_intel_adapter import CompanyIntelAdapter
+    from adapters.person_verification_adapter import PersonVerificationAdapter
+    from adapters.website_verification_adapter import WebsiteVerificationAdapter
+    from adapters.company_discovery_adapter import CompanyDiscoveryAdapter
 
     ALL = {
         "google_dork":     GoogleDorkAdapter,
@@ -156,6 +166,9 @@ def _load_adapters(adapter_filter: str):
         "contextual":      ContextualAdapter,
         "otx":             OtxAdapter,
         "company_intel":   CompanyIntelAdapter,
+        "person_verification": PersonVerificationAdapter,
+        "website_verification": WebsiteVerificationAdapter,
+        "company_discovery": CompanyDiscoveryAdapter,
     }
 
     if adapter_filter.strip().lower() == "all":

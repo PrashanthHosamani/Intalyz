@@ -60,9 +60,17 @@ class PDFReporter:
         resolved: Dict[str, Any],
         risk:     Dict[str, Any],
         raw_meta: Dict[str, Any],
+        relationships: Dict[str, Any] = None,
     ) -> str:
         """
         Build and save the PDF.
+
+        Args:
+            entity: Target entity name
+            resolved: Resolved findings from entity resolver
+            risk: Risk scoring data
+            raw_meta: Raw metadata from adapters
+            relationships: (Optional) Entity relationship graph
 
         Returns:
             Absolute path to the generated PDF file.
@@ -86,6 +94,12 @@ class PDFReporter:
         story.append(PageBreak())
         story.extend(self._executive_summary(entity, resolved, risk))
         story.append(PageBreak())
+        
+        # Add relationships section if available
+        if relationships and relationships.get("relationships"):
+            story.extend(self._entity_relationships_section(entity, relationships))
+            story.append(PageBreak())
+        
         story.extend(self._verification_checklist(entity, resolved))
         story.append(PageBreak())
         story.extend(self._financial_overview(resolved))
@@ -291,6 +305,61 @@ class PDFReporter:
             ("LEFTPADDING",   (0, 0), (-1,-1), 8),
         ]))
         return tbl
+
+    def _entity_relationships_section(self, entity: str, relationships: Dict[str, Any]) -> list:
+        """
+        Render entity relationships and discovered affiliations.
+        Shows person ↔ company connections, verified social accounts, etc.
+        """
+        s = self.styles
+        story = [
+            Paragraph("2. ENTITY RELATIONSHIPS & AFFILIATIONS", s["section_heading"]),
+            HRFlowable(width="100%", thickness=1, color=C_ACCENT),
+            Spacer(1, 0.3*cm),
+        ]
+
+        rels = relationships.get("relationships", [])
+        if not rels:
+            story.append(Paragraph("No relationships discovered.", s["body"]))
+            return story
+
+        # Group relationships by type
+        by_type = {}
+        for rel in rels:
+            rel_type = rel.relationship_type if hasattr(rel, 'relationship_type') else rel.get("type", "unknown")
+            if rel_type not in by_type:
+                by_type[rel_type] = []
+            by_type[rel_type].append(rel)
+
+        # Render each relationship type
+        for idx, (rel_type, rel_list) in enumerate(sorted(by_type.items()), 1):
+            heading = rel_type.replace("_", " ").title()
+            story.append(Paragraph(f"2.{idx}  {heading}", s["sub_heading"]))
+            story.append(Spacer(1, 0.2*cm))
+
+            rows = [["Entity", "Relationship", "Related Entity", "Confidence"]]
+            for rel in sorted(rel_list, key=lambda r: getattr(r, 'confidence', 0), reverse=True):
+                entity_a = rel.entity_a if hasattr(rel, 'entity_a') else rel.get("entity_a", "N/A")
+                entity_b = rel.entity_b if hasattr(rel, 'entity_b') else rel.get("entity_b", "N/A")
+                rel_label = rel.relationship_type if hasattr(rel, 'relationship_type') else rel.get("type", "Unknown")
+                conf = rel.confidence if hasattr(rel, 'confidence') else rel.get("confidence", 0)
+                rows.append([entity_a, rel_label.replace("_", " "), entity_b, f"{int(conf)}%"])
+
+            tbl = Table(rows, colWidths=[4*cm, 4*cm, 4.5*cm, 2*cm])
+            tbl.setStyle(TableStyle([
+                ("BACKGROUND",    (0, 0), (-1, 0), C_DARK),
+                ("TEXTCOLOR",     (0, 0), (-1, 0), colors.white),
+                ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE",      (0, 0), (-1,-1), 8),
+                ("ROWBACKGROUNDS",(0, 1), (-1,-1), [C_LIGHT, colors.white]),
+                ("GRID",          (0, 0), (-1,-1), 0.5, C_MUTED),
+                ("TOPPADDING",    (0, 0), (-1,-1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1,-1), 4),
+            ]))
+            story.append(tbl)
+            story.append(Spacer(1, 0.3*cm))
+
+        return story
 
     def _data_tables(self, resolved: Dict) -> list:
         s = self.styles
@@ -607,14 +676,23 @@ class PDFReporter:
         return story
 
     def _build_stock_chart(self, ticker_symbol: str):
-        """Build a line chart of stock price history using yfinance."""
+        """Build a line chart of stock price history using yfinance with timeout."""
         if not ticker_symbol:
             return None
+        import concurrent.futures
         try:
             import yfinance as yf
-            ticker = yf.Ticker(ticker_symbol)
-            hist = ticker.history(period="6mo")
-            if hist.empty or len(hist) < 5:
+            
+            def fetch_history():
+                ticker = yf.Ticker(ticker_symbol)
+                return ticker.history(period="6mo")
+
+            # Use executor with timeout to prevent hanging
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(fetch_history)
+                hist = future.result(timeout=10)
+
+            if hist is None or hist.empty or len(hist) < 5:
                 return None
 
             # Sample ~30 points for clean chart

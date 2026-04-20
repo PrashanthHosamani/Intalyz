@@ -43,7 +43,7 @@ def _get_rate_limit(key: str, default: float) -> float:
     return float(val) if val else default
 
 ADAPTER_RATE_LIMITS = {
-    "google_dork": _get_rate_limit("GOOGLE_DORK_RATE_LIMIT", DEFAULT_RATE_LIMIT),
+    "google_dork": _get_rate_limit("GOOGLE_DORK_RATE_LIMIT", 8.0),  # Increased to 8s to avoid Google 429 blocking
     "whois_dns":   _get_rate_limit("WHOIS_DNS_RATE_LIMIT", 1.0),
     "github":      _get_rate_limit("GITHUB_RATE_LIMIT", 2.0),
     "contextual":  _get_rate_limit("CONTEXTUAL_RATE_LIMIT", 3.0),

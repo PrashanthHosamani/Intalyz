@@ -60,49 +60,59 @@ class WhoisDnsAdapter(BaseAdapter):
                 logger.debug("WHOIS lookup: %s", domain)
                 w = whois.whois(domain)
                 if w and w.domain_name:
-                    # Check robots.txt on referral source
-                    source_url = f"https://whois.domaintools.com/{domain}"
+                    # Confidence check: Only report if name or org matches
+                    registrant = (getattr(w, 'registrant_name', '') or getattr(w, 'name', '') or '').lower()
+                    org = (getattr(w, 'org', '') or getattr(w, 'registrant_organization', '') or '').lower()
+                    entity_lower = entity.lower()
                     
-                    findings.append(
-                        self.make_finding(
-                            title="WHOIS Record",
-                            value={
-                                "domain":       domain,
-                                "registrar":    w.registrar if hasattr(w, 'registrar') else None,
-                                "created":      str(w.creation_date) if hasattr(w, 'creation_date') else None,
-                                "expires":      str(w.expiration_date) if hasattr(w, 'expiration_date') else None,
-                                "updated":      str(w.updated_date) if hasattr(w, 'updated_date') else None,
-                                "name_servers": list(w.name_servers) if hasattr(w, 'name_servers') and w.name_servers else [],
-                                "emails":       list(w.emails) if hasattr(w, 'emails') and w.emails else [],
-                                "org":          w.org if hasattr(w, 'org') else None,
-                                "country":      w.country if hasattr(w, 'country') else None,
-                            },
-                            source_url=source_url,
-                            risk_tags=self._whois_risk_tags(w),
-                            metadata={"raw": str(w)[:500]},
+                    if entity_lower not in registrant and entity_lower not in org:
+                        logger.debug("  SKIPPING WHOIS for unrelated domain: %s", domain)
+                        # Still do DNS check but we might want to skip it too if unrelated
+                    else:
+                        source_url = f"https://whois.domaintools.com/{domain}"
+                        findings.append(
+                            self.make_finding(
+                                title="WHOIS Record (Verified)",
+                                value={
+                                    "domain":       domain,
+                                    "registrar":    w.registrar if hasattr(w, 'registrar') else None,
+                                    "registrant":   registrant,
+                                    "org":          org,
+                                    "created":      str(w.creation_date) if hasattr(w, 'creation_date') else None,
+                                    "expires":      str(w.expiration_date) if hasattr(w, 'expiration_date') else None,
+                                    "name_servers": list(w.name_servers) if hasattr(w, 'name_servers') and w.name_servers else [],
+                                },
+                                source_url=source_url,
+                                risk_tags=self._whois_risk_tags(w),
+                            )
                         )
-                    )
             except Exception as exc:
                 msg = f"WHOIS failed [{domain}]: {exc}"
                 logger.debug(msg)
                 errors.append(msg)
 
             # ── DNS Records ────────────────────────────────────────────────
-            for rtype in DNS_RECORD_TYPES:
-                try:
-                    logger.debug("DNS %s lookup: %s", rtype, domain)
-                    answers = dns.resolver.resolve(domain, rtype, lifetime=5)
-                    records = [str(r) for r in answers]
-                    findings.append(
-                        self.make_finding(
-                            title=f"DNS {rtype} Record",
-                            value={"domain": domain, "type": rtype, "records": records},
-                            source_url=f"https://dnschecker.org/#A/{domain}",
-                            risk_tags=self._dns_risk_tags(rtype, records),
+            # Only perform DNS records if the domain was verified above
+            is_verified = any(f.get("title") == "WHOIS Record (Verified)" and f.get("value", {}).get("domain") == domain for f in findings)
+            
+            if is_verified:
+                for rtype in DNS_RECORD_TYPES:
+                    try:
+                        logger.debug("DNS %s lookup: %s", rtype, domain)
+                        answers = dns.resolver.resolve(domain, rtype, lifetime=5)
+                        records = [str(r) for r in answers]
+                        findings.append(
+                            self.make_finding(
+                                title=f"DNS {rtype} Record",
+                                value={"domain": domain, "type": rtype, "records": records},
+                                source_url=f"https://dnschecker.org/#A/{domain}",
+                                risk_tags=self._dns_risk_tags(rtype, records),
+                            )
                         )
-                    )
-                except (dns.exception.DNSException, Exception):
-                    pass  # Not all record types exist — this is expected
+                    except (dns.exception.DNSException, Exception):
+                        pass  # Not all record types exist — this is expected
+            else:
+                logger.debug("  SKIPPING DNS for unverified domain: %s", domain)
 
         logger.info("✓ %s found %d records", self.ADAPTER_NAME, len(findings))
         return AdapterResult(self.ADAPTER_NAME, self.CATEGORY, findings, errors)

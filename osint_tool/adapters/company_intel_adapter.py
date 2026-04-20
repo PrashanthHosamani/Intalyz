@@ -372,127 +372,62 @@ class CompanyIntelAdapter(BaseAdapter):
         return findings
 
     def _generate_verification_links(self, entity: str, entity_type: str, errors: list) -> list:
-        """Actually search each platform for the entity and return real results."""
+        """Search platforms for the entity in parallel for speed."""
+        import concurrent.futures
         findings = []
         encoded = urllib.parse.quote_plus(entity)
         clean_name = re.sub(r'[^a-zA-Z0-9]', '', entity).lower()
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
 
         verification_checks = [
-            {
-                "factor": "Website",
-                "search_fn": lambda: self._verify_website(entity, headers),
-            },
-            {
-                "factor": "LinkedIn Profile",
-                "search_fn": lambda: self._check_direct_url(
-                    entity, f"https://www.linkedin.com/company/{clean_name}/", headers,
-                    fallback_site="linkedin.com/company"
-                ),
-            },
-            {
-                "factor": "Glassdoor Reviews",
-                "search_fn": lambda: self._search_google_site(entity, "glassdoor.com", headers),
-            },
-            {
-                "factor": "Crunchbase Profile",
-                "search_fn": lambda: self._check_direct_url(
-                    entity, f"https://www.crunchbase.com/organization/{clean_name}", headers,
-                    fallback_site="crunchbase.com"
-                ),
-            },
-            {
-                "factor": "Twitter / X Profile",
-                "search_fn": lambda: self._check_direct_url(
-                    entity, f"https://x.com/{clean_name}", headers,
-                    fallback_site="twitter.com"
-                ),
-            },
-            {
-                "factors": [
-                    "Legal Existence (MCA Portal) — Status, Correct Name, CIN",
-                    "Age / Establishment (MCA Portal) — Date of Incorporation",
-                    "Ownership (MCA Portal) — Director Names & DIN"
-                ],
-                "search_fn": lambda: self._search_google_site(entity, "mca.gov.in", headers),
-            },
-            {
-                "factor": "Tax Compliance (GST Portal) — Status: Active, Regular Return Filing",
-                "search_fn": lambda: self._search_google_site(entity, "gst.gov.in", headers),
-            },
-            {
-                "factor": "Tofler Financial Data — Revenue, P&L, Balance Sheet",
-                "search_fn": lambda: self._search_google_site(entity, "tofler.in", headers),
-            },
-            {
-                "factor": "Zauba Corp Data",
-                "search_fn": lambda: self._search_google_site(entity, "zaubacorp.com", headers),
-            },
-            {
-                "factor": "SEC EDGAR Filing (US) — 10-K, 10-Q Annual/Quarterly Reports",
-                "search_fn": lambda: self._check_sec_edgar(entity, headers),
-            },
-            {
-                "factor": "Companies House (UK) — Company Status, Filing History",
-                "search_fn": lambda: self._check_companies_house(entity, headers),
-            },
-            {
-                "factor": "Physical Presence (Google Maps) — Commercial vs Residential/Fake",
-                "search_fn": lambda: {
-                    "status": "SEARCH_LINK",
-                    "url": f"https://www.google.com/maps/search/{encoded}",
-                    "detail": "Open link to manually verify physical address",
-                },
-            },
+            {"factor": "Website", "fn": lambda: self._verify_website(entity, headers)},
+            {"factor": "LinkedIn Profile", "fn": lambda: self._check_direct_url(entity, f"https://www.linkedin.com/company/{clean_name}/", headers, "linkedin.com/company")},
+            {"factor": "Glassdoor Reviews", "fn": lambda: self._search_google_site(entity, "glassdoor.com", headers)},
+            {"factor": "Crunchbase Profile", "fn": lambda: self._check_direct_url(entity, f"https://www.crunchbase.com/organization/{clean_name}", headers, "crunchbase.com")},
+            {"factor": "Twitter / X Profile", "fn": lambda: self._check_direct_url(entity, f"https://x.com/{clean_name}", headers, "twitter.com")},
+            {"factors": ["Legal Existence (MCA Portal)", "Age / Establishment", "Ownership"], "fn": lambda: self._search_google_site(entity, "mca.gov.in", headers)},
+            {"factor": "Tax Compliance (GST Portal)", "fn": lambda: self._search_google_site(entity, "gst.gov.in", headers)},
+            {"factor": "Tofler Financial Data", "fn": lambda: self._search_google_site(entity, "tofler.in", headers)},
+            {"factor": "Zauba Corp Data", "fn": lambda: self._search_google_site(entity, "zaubacorp.com", headers)},
+            {"factor": "SEC EDGAR Filing (US)", "fn": lambda: self._check_sec_edgar(entity, headers)},
+            {"factor": "Companies House (UK)", "fn": lambda: self._check_companies_house(entity, headers)},
+            {"factor": "Physical Presence (Google Maps)", "fn": lambda: {"status": "SEARCH_LINK", "url": f"https://www.google.com/maps/search/{encoded}", "detail": "Manual check"}},
         ]
 
-        for check in verification_checks:
+        def _run_check(check):
             try:
-                time.sleep(1.5)  # Respect rate limits
-                result = check["search_fn"]()
-                status = result.get("status", "NOT_FOUND")
-                url = result.get("url", "N/A")
-                detail = result.get("detail", "")
-
-                if status == "FOUND":
-                    status_label = "✅ VERIFIED"
-                    risk_tags = []
-                elif status == "SEARCH_LINK":
-                    status_label = "🔗 MANUAL CHECK"
-                    risk_tags = []
-                else:
-                    status_label = "❌ NOT FOUND"
-                    risk_tags = []
-
+                # Add a small staggered start to avoid immediate burst
+                idx = verification_checks.index(check)
+                if idx > 0:
+                    time.sleep(idx * 0.2)
+                
+                res = check["fn"]()
+                status = res.get("status", "NOT_FOUND")
+                url = res.get("url", "N/A")
+                detail = res.get("detail", "")
+                
+                label = "✅ VERIFIED" if status == "FOUND" else ("🔗 MANUAL CHECK" if status == "SEARCH_LINK" else "❌ NOT FOUND")
+                
+                local_findings = []
                 factors = check.get("factors", [check.get("factor")])
                 for f in factors:
-                    findings.append(
-                        self.make_finding(
-                            title="Verification Result",
-                            value={
-                                "factor":  f,
-                                "status":  status_label,
-                                "url":     url,
-                                "detail":  detail,
-                            },
-                            source_url=url,
-                            risk_tags=risk_tags,
-                        )
-                    )
-            except Exception as exc:
-                findings.append(
-                    self.make_finding(
+                    local_findings.append(self.make_finding(
                         title="Verification Result",
-                        value={
-                            "factor":  check["factor"],
-                            "status":  "⚠️ ERROR",
-                            "url":     "N/A",
-                            "detail":  str(exc)[:100],
-                        },
-                        source_url="N/A",
-                        risk_tags=[],
-                    )
-                )
+                        value={"factor": f, "status": label, "url": url, "detail": detail},
+                        source_url=url, risk_tags=[]
+                    ))
+                return local_findings
+            except Exception as exc:
+                return [self.make_finding(
+                    title="Verification Result",
+                    value={"factor": check.get("factor", "Unknown"), "status": "⚠️ ERROR", "url": "N/A", "detail": str(exc)[:100]},
+                    source_url="N/A", risk_tags=[]
+                )]
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            future_results = list(executor.map(_run_check, verification_checks))
+            for res_list in future_results:
+                findings.extend(res_list)
 
         return findings
 
