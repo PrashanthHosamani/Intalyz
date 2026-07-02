@@ -60,10 +60,7 @@ def main():
             env_content = f.read()
     else:
         env_content = ""
-    
-    # =========================================================================
-    # 3. Check Required Imports
-    # =========================================================================
+
     print(f"\n{color('bold')}3. Required Libraries:{color('reset')}")
     
     libs_check = {
@@ -81,9 +78,7 @@ def main():
         except ImportError:
             results.append(check(False, "", f"{lib_label} not installed"))
     
-    # =========================================================================
-    # 4. Check API Keys
-    # =========================================================================
+
     print(f"\n{color('bold')}4. API Key Configuration:{color('reset')}")
     
     api_keys = {
@@ -119,9 +114,7 @@ def main():
             print(f"  {color('yellow')}!{color('reset')} {msg}")
             results.append(True)
     
-    # =========================================================================
-    # 5. Check Directories
-    # =========================================================================
+
     print(f"\n{color('bold')}5. Project Structure:{color('reset')}")
     
     dirs_to_check = {
@@ -138,9 +131,7 @@ def main():
         full_path = root / rel_path
         results.append(check(full_path.exists(), f"{label} found", f"{label} missing"))
     
-    # =========================================================================
-    # 6. Test Imports
-    # =========================================================================
+
     print(f"\n{color('bold')}6. Module Imports:{color('reset')}")
     
     test_imports = [
@@ -161,9 +152,7 @@ def main():
         except Exception as e:
             results.append(check(False, "", f"{label} import failed: {e}"))
     
-    # =========================================================================
-    # Summary
-    # =========================================================================
+
     print(f"\n{color('bold')}{color('cyan')}{'='*60}{color('reset')}")
     
     passed = sum(results)
@@ -180,9 +169,7 @@ def main():
     print(f"{status}")
     print(f"Score: {passed}/{total} checks passed ({pct}%)")
     
-    # =========================================================================
-    # Recommendations
-    # =========================================================================
+    
     print(f"\n{color('bold')}Recommendations:{color('reset')}")
     
     if not api_status.get('GITHUB_TOKEN'):

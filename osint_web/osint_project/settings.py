@@ -168,3 +168,15 @@ DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 # ── OSINT Tool path (points to our existing osint_tool module) ────────────────
 OSINT_TOOL_PATH = str(BASE_DIR.parent / 'osint_tool')
 OSINT_OUTPUT_DIR = str(BASE_DIR / 'media' / 'reports')
+
+# Production Security Settings for Render (HTTPS)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Add your Render domain to trusted origins
+    CSRF_TRUSTED_ORIGINS = [
+        'https://intalyz.onrender.com',
+        'https://*.onrender.com',
+    ]

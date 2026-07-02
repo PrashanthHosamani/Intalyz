@@ -45,7 +45,6 @@ def index(request):
     return render(request, 'osint_app/index.html', context)
 
 
-@login_required(login_url='accounts:signin')
 @csrf_exempt
 @require_http_methods(["POST"])
 def submit_investigation(request):
@@ -53,6 +52,8 @@ def submit_investigation(request):
     Accept form submission, create a job, kick off background thread.
     Returns JSON with job ID for polling.
     """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required. Please sign in.'}, status=401)
     try:
         data = json.loads(request.body)
     except Exception:
@@ -88,9 +89,10 @@ def submit_investigation(request):
     })
 
 
-@login_required(login_url='accounts:signin')
 def job_status(request, job_id):
     """Poll endpoint — returns current job status + result info."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.'}, status=401)
     job = get_object_or_404(InvestigationJob, id=job_id, user=request.user)
     data = {
         'job_id':        str(job.id),

@@ -51,7 +51,6 @@ class GitHubAdapter(BaseAdapter):
 
             import concurrent.futures
 
-            # ── Search repositories ────────────────────────────────────────
             repos = gh.search_repositories(query=f"{entity} in:name,description", sort="stars")
             repo_list = []
             for repo in repos:
@@ -85,7 +84,6 @@ class GitHubAdapter(BaseAdapter):
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 findings.extend(executor.map(process_repo, repo_list))
 
-            # ── Search organisations ───────────────────────────────────────
             orgs = gh.search_users(query=f"{entity} type:org")
             org_list = []
             for org in orgs:
@@ -118,8 +116,6 @@ class GitHubAdapter(BaseAdapter):
             errors.append(msg)
 
         return AdapterResult(self.ADAPTER_NAME, self.CATEGORY, findings, errors)
-
-    # ── Helpers ───────────────────────────────────────────────────────────────
 
     @staticmethod
     def _get_readme(repo) -> str:

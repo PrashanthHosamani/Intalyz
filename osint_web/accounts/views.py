@@ -34,29 +34,68 @@ def signup(request):
 
 @require_http_methods(["GET", "POST"])
 def signin(request):
-    """User login page."""
     if request.user.is_authenticated:
-        return redirect('index')
-    
-    if request.method == 'POST':
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            user = form.cleaned_data.get('user')
-            remember_me = form.cleaned_data.get('remember_me')
-            
-            login(request, user)
-            
-            if not remember_me:
-                # Set session to expire when browser closes
-                request.session.set_expiry(0)
-            
-            messages.success(request, f'Welcome back, {user.username}!')
-            next_url = request.GET.get('next', 'index')
-            return redirect(next_url)
+        return redirect("index")
+
+    if request.method == "POST":
+        try:
+            print("===== STEP 1 =====")
+
+            form = LoginForm(request.POST)
+
+            print("===== STEP 2 =====")
+
+            valid = form.is_valid()
+
+            print("===== STEP 3 =====", valid)
+
+            if valid:
+                user = form.cleaned_data["user"]
+
+                print("===== STEP 4 =====", user)
+
+                login(request, user)
+
+                print("===== STEP 5 =====")
+
+                return redirect("index")
+
+            print(form.errors)
+
+        except Exception:
+            import traceback
+            print(traceback.format_exc())
+            raise
+
     else:
         form = LoginForm()
+
+    return render(request, "accounts/signin.html", {"form": form})
+
+# def signin(request):
+#     """User login page."""
+#     if request.user.is_authenticated:
+#         return redirect('index')
     
-    return render(request, 'accounts/signin.html', {'form': form})
+#     if request.method == 'POST':
+#         form = LoginForm(request.POST)
+#         if form.is_valid():
+#             user = form.cleaned_data.get('user')
+#             remember_me = form.cleaned_data.get('remember_me')
+            
+#             login(request, user)
+            
+#             if not remember_me:
+#                 # Set session to expire when browser closes
+#                 request.session.set_expiry(0)
+            
+#             messages.success(request, f'Welcome back, {user.username}!')
+#             next_url = request.GET.get('next', 'index')
+#             return redirect(next_url)
+#     else:
+#         form = LoginForm()
+    
+#     return render(request, 'accounts/signin.html', {'form': form})
 
 
 @require_http_methods(["GET"])
