@@ -93,6 +93,12 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
 SOCIALACCOUNT_LOGIN_ON_GET = True  # Skip the "You are about to sign in via Google" confirmation page
 
+# No SMTP server is configured on Render, so signup was 500ing when allauth
+# tried to send a verification email. Print emails to the logs instead until a
+# real email provider is wired up. Swap to an SMTP/API backend later.
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'no-reply@intalyz.onrender.com'
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -180,3 +186,20 @@ if not DEBUG:
         'https://intalyz.onrender.com',
         'https://*.onrender.com',
     ]
+
+# Surface real tracebacks in Render's log stream (Django hides them when DEBUG=False).
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'root': {'handlers': ['console'], 'level': 'INFO'},
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
