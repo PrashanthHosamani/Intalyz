@@ -10,7 +10,7 @@ services:
     runtime: python
     plan: free
     buildCommand: "./build.sh"
-    startCommand: "cd osint_web && gunicorn osint_project.wsgi:application"
+    startCommand: "cd osint_web && python manage.py migrate --noinput && gunicorn osint_project.wsgi:application"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
