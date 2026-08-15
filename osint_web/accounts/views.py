@@ -18,8 +18,10 @@ def signup(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Log the user in after registration
-            login(request, user)
+            # Log the user in after registration. An explicit backend is required
+            # because AUTHENTICATION_BACKENDS has more than one entry (ModelBackend
+            # + allauth); without it Django raises ValueError.
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, 'Account created successfully! Welcome to OSINT Platform.')
             return redirect('index')
         else:
@@ -54,7 +56,7 @@ def signin(request):
 
                 print("===== STEP 4 =====", user)
 
-                login(request, user)
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
                 print("===== STEP 5 =====")
 
